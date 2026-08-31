@@ -1,0 +1,96 @@
+name: Scrape apartments
+
+on:
+  schedule:
+    # GitHub cron is UTC and has no daylight-saving awareness, so both
+    # candidate hours run and the guard step below keeps the one that is
+    # actually 18:00 in Copenhagen.
+    - cron: "0 16 * * *" # 18:00 CEST (summer)
+    - cron: "0 17 * * *" # 18:00 CET  (winter)
+  workflow_dispatch: # lets you trigger a run by hand from the Actions tab
+
+permissions:
+  contents: write # commit the updated CSV back to the repo
+  pages: write # publish the page
+  id-token: write # required by actions/deploy-pages
+
+concurrency:
+  group: apartment-scrape
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      run: ${{ steps.gate.outputs.run }}
+    steps:
+      - name: Only continue at 18:00 Copenhagen time
+        id: gate
+        run: |
+          hour=$(TZ=Europe/Copenhagen date +%H)
+          if [ "${{ github.event_name }}" != "schedule" ] || [ "$hour" = "18" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "Running (local hour: $hour)."
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: it is $hour:00 in Copenhagen, not 18:00."
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.run == 'true'
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Run tests
+        if: steps.gate.outputs.run == 'true'
+        run: python -m unittest discover tests
+
+      - name: Scrape
+        if: steps.gate.outputs.run == 'true'
+        run: python -m apartment_hunter
+
+      - name: Commit the results
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          git config user.name "apartment-hunter"
+          git config user.email "actions@github.com"
+          # The CSV is the dedup memory and must persist between runs; the page
+          # is committed alongside it so the repo always shows the current
+          # state, and so the daily commit keeps the schedule from being
+          # disabled for inactivity.
+          git add data/listings.csv docs/
+          if git diff --staged --quiet; then
+            echo "Nothing changed today."
+          else
+            git commit -m "Listings for $(TZ=Europe/Copenhagen date +%F)"
+            git push
+          fi
+
+      - name: Upload the page
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  publish:
+    needs: scrape
+    if: needs.scrape.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

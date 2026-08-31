@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Rendered pages saved by tools/discover.py --save-html
+tools/_rendered/
+
+.DS_Store
+.idea/
+.vscode/
