@@ -1,8 +1,8 @@
 # Apartment hunter
 
-Scrapes eleven Copenhagen rental sites once a day at **18:00 Europe/Copenhagen**,
-records every apartment it has not seen before in a CSV, and publishes a single
-sortable page of the results on GitHub Pages.
+Scrapes eleven Copenhagen rental sites twice a day, at **11:00 and 18:00
+Europe/Copenhagen**, records every apartment it has not seen before in a CSV,
+and publishes a single sortable page of the results on GitHub Pages.
 
 ## What it looks for
 
@@ -61,8 +61,9 @@ finds the card without knowing anything about the site's markup, so a redesign
 usually costs nothing. A site can still override any part of it via
 `card_selector` / `selectors`, or register a custom scraper in `sites/`.
 
-Deduplication runs *before* detail pages are fetched, so a daily run only pays
-one extra request per genuinely new apartment.
+Deduplication runs *before* detail pages are fetched, so each run only pays one
+extra request per genuinely new apartment — the second run of the day opens
+almost nothing, because it already knows everything the first one found.
 
 ## Running it locally
 
@@ -81,7 +82,7 @@ python -m apartment_hunter --report-only   # rebuild the page from the CSV
 Then open `docs/index.html`.
 
 ```bash
-python -m unittest discover tests          # 63 tests, no network needed
+python -m unittest discover tests          # 67 tests, no network needed
 ```
 
 ## Publishing on GitHub Pages
@@ -110,10 +111,11 @@ python -m unittest discover tests          # 63 tests, no network needed
 4. Trigger the first run by hand from the **Actions** tab
    (*Scrape apartments → Run workflow*).
 
-The workflow is scheduled at both 16:00 and 17:00 UTC and a guard step keeps
-only the run that is really 18:00 in Copenhagen, which is how it stays correct
-across daylight saving. GitHub also queues scheduled jobs under load, so the
-run can start a few minutes late.
+Each wanted time is scheduled at both candidate UTC hours (09:00/10:00 for
+11:00, 16:00/17:00 for 18:00) and a guard step keeps only the run that is really
+11:00 or 18:00 in Copenhagen, which is how it stays correct across daylight
+saving. GitHub also queues scheduled jobs under load, so a run can start a few
+minutes late.
 
 > GitHub disables scheduled workflows in repositories with no commits for 60
 > days. This one commits whenever it finds something, so that only becomes a
@@ -144,7 +146,7 @@ suggests. If the results need a moment to arrive over XHR, set
 * CEJ throttles repeated automated visits and then answers HTTP 200 with a
   "429 Request limit exceeded" page. The scraper detects that in the page text,
   backs off and retries, and moves on if the site is still refusing — so a run
-  from one busy IP can come back empty for CEJ alone. Once a day from a GitHub
+  from one busy IP can come back empty for CEJ alone. Twice a day from a GitHub
   runner is well inside what it tolerates.
 * `data/listings.csv` is the memory of the system. Deleting a row makes that
   apartment count as new again. `data/rejected.csv` remembers apartments that

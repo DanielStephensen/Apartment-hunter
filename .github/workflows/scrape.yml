@@ -2,9 +2,11 @@ name: Scrape apartments
 
 on:
   schedule:
-    # GitHub cron is UTC and has no daylight-saving awareness, so both
-    # candidate hours run and the guard step below keeps the one that is
-    # actually 18:00 in Copenhagen.
+    # GitHub cron is UTC and has no daylight-saving awareness, so each wanted
+    # time is scheduled at both candidate hours and the guard step below keeps
+    # only the one that is really 11:00 or 18:00 in Copenhagen.
+    - cron: "0 9 * * *" # 11:00 CEST (summer)
+    - cron: "0 10 * * *" # 11:00 CET  (winter)
     - cron: "0 16 * * *" # 18:00 CEST (summer)
     - cron: "0 17 * * *" # 18:00 CET  (winter)
   workflow_dispatch: # lets you trigger a run by hand from the Actions tab
@@ -25,16 +27,20 @@ jobs:
     outputs:
       run: ${{ steps.gate.outputs.run }}
     steps:
-      - name: Only continue at 18:00 Copenhagen time
+      - name: Only continue at 11:00 or 18:00 Copenhagen time
         id: gate
         run: |
           hour=$(TZ=Europe/Copenhagen date +%H)
-          if [ "${{ github.event_name }}" != "schedule" ] || [ "$hour" = "18" ]; then
+          case "$hour" in
+            11|18) wanted=yes ;;
+            *)     wanted=no  ;;
+          esac
+          if [ "${{ github.event_name }}" != "schedule" ] || [ "$wanted" = "yes" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
             echo "Running (local hour: $hour)."
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "Skipping: it is $hour:00 in Copenhagen, not 18:00."
+            echo "Skipping: it is $hour:00 in Copenhagen, not 11:00 or 18:00."
           fi
 
       - uses: actions/checkout@v4
