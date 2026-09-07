@@ -4,6 +4,7 @@
     python -m apartment_hunter --site kereby   # one site, useful when debugging
     python -m apartment_hunter --dry-run       # scrape but do not touch the CSV
     python -m apartment_hunter --report-only   # rebuild the page from the CSV
+    python -m apartment_hunter --no-email      # scrape without notifying anyone
 """
 
 from __future__ import annotations
@@ -13,7 +14,7 @@ import logging
 import sys
 from typing import List, Optional
 
-from . import report
+from . import notify, report
 from .config import LISTINGS_CSV, SITE_DIR, enabled_sites, site_by_key
 from .pipeline import run
 from .store import ListingStore
@@ -29,6 +30,8 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument("--headed", action="store_true", help="show the browser window")
     parser.add_argument("--dry-run", action="store_true", help="do not write the CSV or the page")
     parser.add_argument("--report-only", action="store_true", help="rebuild the page from the CSV")
+    parser.add_argument("--no-email", action="store_true",
+                        help="do not email the new listings even if SMTP is configured")
     parser.add_argument("--csv", default=str(LISTINGS_CSV), help="path to the listings CSV")
     parser.add_argument("--out", default=str(SITE_DIR / "index.html"), help="path of the generated page")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -72,6 +75,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     if summary.failed_sites and len(summary.failed_sites) == len(summary.results):
         logging.error("every site failed")
         return 1
+
+    # Last, so a mail server having a bad day cannot cost us the scrape. The
+    # CSV is only committed when this process succeeds, so a failed send leaves
+    # the listings unrecorded and the next run reports them again.
+    if not args.dry_run and not args.no_email:
+        try:
+            notify.send(notify.sorted_for_email(summary.new_listings))
+        except Exception:  # noqa: BLE001 - the reason is in the traceback
+            logging.exception("could not send the notification email")
+            return 1
     return 0
 
 

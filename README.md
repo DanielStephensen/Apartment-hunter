@@ -51,6 +51,8 @@ store.py      data/listings.csv, keyed on the canonical listing URL,
    │          plus data/rejected.csv so ruled-out flats are not re-fetched
    │
 report.py     docs/index.html
+   │
+notify.py     emails whatever was new in this run
 ```
 
 The extraction is deliberately structural rather than a pile of per-site CSS
@@ -78,12 +80,14 @@ python -m apartment_hunter --site kereby   # one site
 python -m apartment_hunter --dry-run       # scrape without writing anything
 python -m apartment_hunter --headed        # watch the browser work
 python -m apartment_hunter --report-only   # rebuild the page from the CSV
+python -m apartment_hunter --no-email      # scrape without notifying anyone
 ```
 
-Then open `docs/index.html`.
+Then open `docs/index.html`. A local run sends no email unless you set the
+variables below, so `--no-email` is only needed if you have them in your shell.
 
 ```bash
-python -m unittest discover tests          # 67 tests, no network needed
+python -m unittest discover tests          # 97 tests, no network needed
 ```
 
 ## Publishing on GitHub Pages
@@ -126,6 +130,51 @@ source of error by far.
 > risk during a very quiet stretch — the workflow can be re-enabled from the
 > Actions tab.
 
+## Email notifications
+
+Every run that finds something emails it to the addresses in
+`NOTIFY_RECIPIENTS` (`config.py`). Only apartments that are new *in that run*
+are included, so nothing arrives twice and quiet days are silent.
+
+Delivery is plain SMTP from the standard library, so there is nothing to sign
+up for and nothing to pay. Any mailbox with SMTP works; a Gmail app password is
+the least trouble:
+
+1. The sending Google account needs **2-Step Verification** turned on
+   (*myaccount.google.com → Security*) — app passwords do not exist without it.
+2. Create one at **myaccount.google.com/apppasswords**. Google shows a
+   16-character string; the spaces in it are decoration and can be typed or not.
+3. Add it to the repository under *Settings → Secrets and variables → Actions*:
+
+   | Secret | Value |
+   | --- | --- |
+   | `SMTP_USER` | the full Gmail address |
+   | `SMTP_PASSWORD` | the 16-character app password |
+
+That is all that is required. Until both secrets exist the workflow still runs
+and simply sends nothing, and the same is true locally, so a scrape on your own
+machine never mails anyone by accident.
+
+Four optional *variables* (the **Variables** tab, not **Secrets** — they are not
+sensitive) cover everything else:
+
+| Variable | Default | For |
+| --- | --- | --- |
+| `SMTP_HOST` | `smtp.gmail.com` | a different provider |
+| `SMTP_PORT` | `587` | `465` if the provider wants implicit TLS |
+| `MAIL_FROM` | `SMTP_USER` | sending as another address |
+| `MAIL_TO` | `NOTIFY_RECIPIENTS` | changing recipients without a commit |
+
+A send that fails fails the run, which means the CSV is not committed and those
+listings are still unknown on the next run — so a bad evening at the mail server
+delays the email rather than losing it. The cost is that the page is not
+republished until the next successful run.
+
+> Gmail allows far more than this needs (500 recipients a day). Note that Google
+> disables app passwords on accounts enrolled in the Advanced Protection
+> Program, and that an app password is a full-mailbox credential — a dedicated
+> account is worth considering over a personal one.
+
 ## Adding or fixing a site
 
 `tools/discover.py` renders a site and reports what it actually links to, which
@@ -153,8 +202,9 @@ suggests. If the results need a moment to arrive over XHR, set
   from one busy IP can come back empty for CEJ alone. Twice a day from a GitHub
   runner is well inside what it tolerates.
 * `data/listings.csv` is the memory of the system. Deleting a row makes that
-  apartment count as new again. `data/rejected.csv` remembers apartments that
-  were examined and ruled out, so their pages are not re-opened every day;
+  apartment count as new again — and, since the email reports exactly what was
+  new in the run, mails it out again. `data/rejected.csv` remembers apartments
+  that were examined and ruled out, so their pages are not re-opened every day;
   delete it to re-examine everything from scratch.
 * Sites are scraped politely: one browser, pages in sequence, and a backoff when
   a site signals throttling.

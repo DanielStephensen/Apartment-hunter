@@ -21,6 +21,17 @@ LISTINGS_CSV = DATA_DIR / "listings.csv"
 REJECTIONS_CSV = DATA_DIR / "rejected.csv"
 SITE_DIR = ROOT / "docs"
 
+#: Where the published page lives, linked at the bottom of every email.
+SITE_URL = "https://danielstephensen.github.io/Apartment-hunter/"
+
+#: Who is emailed when a run finds something new. The addresses are settings,
+#: not secrets, so they live here next to the rest of the search brief; set
+#: MAIL_TO in the environment to override them for a one-off run.
+NOTIFY_RECIPIENTS = (
+    "daniel@stephensen.net",
+    "kristian.ebdrup@yahoo.dk",
+)
+
 #: Minimum number of rooms we are interested in.
 MIN_ROOMS = 5
 

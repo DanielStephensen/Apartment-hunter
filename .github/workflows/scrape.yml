@@ -42,6 +42,15 @@ jobs:
         run: python -m unittest discover tests
 
       - name: Scrape
+        # Without SMTP_USER/SMTP_PASSWORD the run simply scrapes and sends
+        # nothing, so the workflow still works before the secrets are added.
+        env:
+          SMTP_HOST: ${{ vars.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_FROM: ${{ vars.MAIL_FROM }}
+          MAIL_TO: ${{ vars.MAIL_TO }}
         run: python -m apartment_hunter
 
       - name: Commit the results
