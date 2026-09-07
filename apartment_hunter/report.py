@@ -170,7 +170,7 @@ _TEMPLATE = """<!doctype html>
 <body>
 <div class="wrap">
   <h1>Lejeboliger i København</h1>
-  <p class="sub">5+ værelser · opdateret automatisk hver dag kl. 11:00 og 18:00 · senest genereret __GENERATED__</p>
+  <p class="sub">5+ værelser · opdateret automatisk to gange dagligt · senest genereret __GENERATED__</p>
 
   <div class="stats">
     <div class="stat"><b>__TOTAL__</b><span>Boliger i alt</span></div>

@@ -1,8 +1,9 @@
 # Apartment hunter
 
-Scrapes eleven Copenhagen rental sites twice a day, at **11:00 and 18:00
-Europe/Copenhagen**, records every apartment it has not seen before in a CSV,
-and publishes a single sortable page of the results on GitHub Pages.
+Scrapes eleven Copenhagen rental sites twice a day, in the **morning and
+afternoon Europe/Copenhagen** (see [Schedule](#schedule) — GitHub's cron is not
+punctual), records every apartment it has not seen before in a CSV, and
+publishes a single sortable page of the results on GitHub Pages.
 
 ## What it looks for
 
@@ -111,11 +112,14 @@ python -m unittest discover tests          # 67 tests, no network needed
 4. Trigger the first run by hand from the **Actions** tab
    (*Scrape apartments → Run workflow*).
 
-Each wanted time is scheduled at both candidate UTC hours (09:00/10:00 for
-11:00, 16:00/17:00 for 18:00) and a guard step keeps only the run that is really
-11:00 or 18:00 in Copenhagen, which is how it stays correct across daylight
-saving. GitHub also queues scheduled jobs under load, so a run can start a few
-minutes late.
+### Schedule
+
+The two runs are scheduled at 09:00 and 16:00 UTC, which is 11:00 and 18:00 in
+Copenhagen in summer and an hour earlier in winter. GitHub dispatches scheduled
+workflows on a best-effort basis and in practice starts this one one to six
+hours after the cron time, so treat both times as "morning" and "afternoon"
+rather than as appointments — the drift from daylight saving is the smallest
+source of error by far.
 
 > GitHub disables scheduled workflows in repositories with no commits for 60
 > days. This one commits whenever it finds something, so that only becomes a

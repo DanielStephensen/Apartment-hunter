@@ -2,13 +2,13 @@ name: Scrape apartments
 
 on:
   schedule:
-    # GitHub cron is UTC and has no daylight-saving awareness, so each wanted
-    # time is scheduled at both candidate hours and the guard step below keeps
-    # only the one that is really 11:00 or 18:00 in Copenhagen.
-    - cron: "0 9 * * *" # 11:00 CEST (summer)
-    - cron: "0 10 * * *" # 11:00 CET  (winter)
-    - cron: "0 16 * * *" # 18:00 CEST (summer)
-    - cron: "0 17 * * *" # 18:00 CET  (winter)
+    # GitHub cron is UTC and has no daylight-saving awareness, so these land at
+    # 11:00/18:00 Copenhagen in summer and 10:00/17:00 in winter. The one-hour
+    # drift is not worth correcting: GitHub dispatches scheduled events on a
+    # best-effort basis and in practice runs this workflow hours late, so there
+    # is no wall-clock hour a guard step could match. It runs when it runs.
+    - cron: "0 9 * * *" # 11:00 CEST / 10:00 CET
+    - cron: "0 16 * * *" # 18:00 CEST / 17:00 CET
   workflow_dispatch: # lets you trigger a run by hand from the Actions tab
 
 permissions:
@@ -24,51 +24,27 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    outputs:
-      run: ${{ steps.gate.outputs.run }}
     steps:
-      - name: Only continue at 11:00 or 18:00 Copenhagen time
-        id: gate
-        run: |
-          hour=$(TZ=Europe/Copenhagen date +%H)
-          case "$hour" in
-            11|18) wanted=yes ;;
-            *)     wanted=no  ;;
-          esac
-          if [ "${{ github.event_name }}" != "schedule" ] || [ "$wanted" = "yes" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Running (local hour: $hour)."
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "Skipping: it is $hour:00 in Copenhagen, not 11:00 or 18:00."
-          fi
-
       - uses: actions/checkout@v4
-        if: steps.gate.outputs.run == 'true'
 
       - uses: actions/setup-python@v5
-        if: steps.gate.outputs.run == 'true'
         with:
           python-version: "3.12"
           cache: pip
 
       - name: Install dependencies
-        if: steps.gate.outputs.run == 'true'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           playwright install --with-deps chromium
 
       - name: Run tests
-        if: steps.gate.outputs.run == 'true'
         run: python -m unittest discover tests
 
       - name: Scrape
-        if: steps.gate.outputs.run == 'true'
         run: python -m apartment_hunter
 
       - name: Commit the results
-        if: steps.gate.outputs.run == 'true'
         run: |
           git config user.name "apartment-hunter"
           git config user.email "actions@github.com"
@@ -85,14 +61,12 @@ jobs:
           fi
 
       - name: Upload the page
-        if: steps.gate.outputs.run == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs
 
   publish:
     needs: scrape
-    if: needs.scrape.outputs.run == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
