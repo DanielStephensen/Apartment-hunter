@@ -1,4 +1,5 @@
 id,scraped_date,name,url,price,rooms,area_m2,address,postal_code,city,site,delevenlig
+89e5eadfef61b3d4,2026-10-01,"Jagtvej 183, 1. tv, 2100 København Ø",https://kereby.dk/bolig/jagtvej-183-1-tv-2100-kobenhavn/,26227,5.0,160,"Jagtvej 183, 1. tv, 2100 København Ø",2100,København Ø,kereby,ukendt
 584d585de0ec517a,2026-09-23,"Nørrebrogade 124, 2. th.",https://propstep.com/da-DK/bolig/6ab371f607c869ba388776d0-noerrebrogade-124-2-th,,5.0,149,,2200,København N Nørrebrogade 122-12,propstep,ja
 e35f0d30dcaaafbf,2026-09-21,"Jagtvej 113, 2., 2200 København N",https://kereby.dk/bolig/jagtvej-113-2-2200-kobenhavn-n/,41279,7.0,246,"Jagtvej 113, 2., 2200 København N",2200,København N,kereby,ukendt
 edfebb4d72c1fbf0,2026-09-11,Else Alfelts Vej 33L,https://propstep.com/da-DK/bolig/696a3c4b7bfa6a3e198420f2-else-alfelts-vej-33l,,6.0,113,,2300,København S Ørestad Syd Rækkehu,propstep,ukendt
