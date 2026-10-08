@@ -1,4 +1,6 @@
 id,scraped_date,name,url,price,rooms,area_m2,address,postal_code,city,site,delevenlig
+7bad1ec4ceeb42ad,2026-10-08,"Vigerslev Allé 53, 3. tv.",https://propstep.com/da-DK/bolig/696a3bff7bfa6a3e19841be5-vigerslev-alle-53-3-tv,,5.0,138,,2500,Valby Allé Huset I Lejlighed 26,propstep,ukendt
+7e3b25ea8a0c6156,2026-10-08,"Vigerslev Allé 49, 3. tv.",https://propstep.com/da-DK/bolig/6908b64d7ff4b306307132dc-vigerslev-allee-49-3-tv,,5.0,119,,2500,Valby Alle Huset II Lejlighed 2,propstep,ukendt
 89e5eadfef61b3d4,2026-10-01,"Jagtvej 183, 1. tv, 2100 København Ø",https://kereby.dk/bolig/jagtvej-183-1-tv-2100-kobenhavn/,26227,5.0,160,"Jagtvej 183, 1. tv, 2100 København Ø",2100,København Ø,kereby,ukendt
 584d585de0ec517a,2026-09-23,"Nørrebrogade 124, 2. th.",https://propstep.com/da-DK/bolig/6ab371f607c869ba388776d0-noerrebrogade-124-2-th,,5.0,149,,2200,København N Nørrebrogade 122-12,propstep,ja
 e35f0d30dcaaafbf,2026-09-21,"Jagtvej 113, 2., 2200 København N",https://kereby.dk/bolig/jagtvej-113-2-2200-kobenhavn-n/,41279,7.0,246,"Jagtvej 113, 2., 2200 København N",2200,København N,kereby,ukendt
