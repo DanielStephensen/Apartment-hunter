@@ -64,10 +64,28 @@ jobs:
           git add data/listings.csv docs/
           if git diff --staged --quiet; then
             echo "Nothing changed today."
-          else
-            git commit -m "Listings for $(TZ=Europe/Copenhagen date +%F)"
-            git push
+            exit 0
           fi
+          git commit -m "Listings for $(TZ=Europe/Copenhagen date +%F)"
+          # main can have moved since checkout: re-running an old run checks out
+          # that run's original SHA, and a scheduled run can also overlap a push
+          # of your own. Either way the push is a non-fast-forward, so rebase
+          # onto whatever main is now and try again instead of failing the run.
+          for attempt in 1 2 3; do
+            if git push; then
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt); rebasing onto origin/main."
+            if ! git pull --rebase origin main; then
+              # A conflict means the two runs disagree about the CSV rather than
+              # merely racing, which is not something to resolve unattended.
+              git rebase --abort || true
+              echo "::error::Rebase onto origin/main conflicted; main left untouched."
+              exit 1
+            fi
+          done
+          echo "::error::Still could not push after 3 attempts."
+          exit 1
 
       - name: Upload the page
         uses: actions/upload-pages-artifact@v3
